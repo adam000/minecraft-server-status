@@ -1,0 +1,3 @@
+[submodule "Batchcraft"]
+	path = Batchcraft
+	url = git@github.com:Kealper/Batchcraft.git
