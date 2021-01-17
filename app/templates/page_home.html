@@ -1,0 +1,62 @@
+<head>
+    <title>Minecraft Server Status</title>
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        function refresh() {
+            $(".reloader").addClass("hidden");
+            setTimeout(function() {
+                $.getJSON("status", function(data) {
+                    console.log(data);
+                    $(".error").addClass("hidden");
+                    $(".isOnline").addClass("hidden");
+                    $(".playersOnline").addClass("hidden");
+                    $(".serverStarter").addClass("hidden");
+                    if (data.ErrorText != "") {
+                        $(".error").text(data.ErrorText);
+                        $(".error").removeClass("hidden");
+                    } else if (data.IsOnline) {
+                        $(".isOnline").text("Server is online.");
+                        $(".playersOnline").text(`${data.PlayersOnline} players online right now.`);
+                        $(".isOnline").removeClass("hidden");
+                        $(".playersOnline").removeClass("hidden");
+                    } else {
+                        $(".isOnline").text("Server is offline.");
+                        $(".isOnline").removeClass("hidden");
+                        $(".serverStarter").removeClass("hidden");
+                    }
+                    // Change the p under status to "Loaded!"
+                    $(".loadStatus").text("Loaded!");
+                    $(".reloader").removeClass("hidden");
+                });
+            }, 1000);
+        }
+        $(document).ready(function() {
+            refresh();
+            $(".reloader").click(function() {
+                $(".loadStatus").text("Loading...");
+                refresh();
+            });
+        });
+    </script>
+</head>
+<body style="display:flex; justify-content:center; align-items:center;">
+    <div id="main" style="display:flex; justify-content:center; align-items:center;">
+        <div id="content" style="border:1px solid grey; height: 500px; width: 800px; padding: 10px;">
+            <h2>Minecraft Server Status</h2>
+            <div id="status" class="" style="border-top: 60px;">
+                <h3>minecraft.adam0.net</h3>
+                <p class="loadStatus">Loading...</p>
+                <p class="error" style="color: red;" class="hidden"></p>
+                <p class="isOnline" class="hidden"></p>
+                <p class="playersOnline" class="hidden"></p>
+                <button class="serverStarter hidden">Start Server</button>
+                <button class="reloader hidden">Reload</button>
+            </div>
+        </div>
+    </div>
+</body>
