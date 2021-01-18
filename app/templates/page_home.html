@@ -4,36 +4,42 @@
         .hidden {
             display: none;
         }
+        .loading {
+            background-color: grey;
+        }
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script type="text/javascript">
         function refresh() {
             $(".reloader").addClass("hidden");
-            setTimeout(function() {
-                $.getJSON("status", function(data) {
-                    console.log(data);
-                    $(".error").addClass("hidden");
-                    $(".isOnline").addClass("hidden");
-                    $(".playersOnline").addClass("hidden");
-                    $(".serverStarter").addClass("hidden");
-                    if (data.ErrorText != "") {
-                        $(".error").text(data.ErrorText);
-                        $(".error").removeClass("hidden");
-                    } else if (data.IsOnline) {
-                        $(".isOnline").text("Server is online.");
-                        $(".playersOnline").text(`${data.PlayersOnline} players online right now.`);
-                        $(".isOnline").removeClass("hidden");
-                        $(".playersOnline").removeClass("hidden");
-                    } else {
-                        $(".isOnline").text("Server is offline.");
-                        $(".isOnline").removeClass("hidden");
-                        $(".serverStarter").removeClass("hidden");
-                    }
-                    // Change the p under status to "Loaded!"
-                    $(".loadStatus").text("Loaded!");
-                    $(".reloader").removeClass("hidden");
+            $("#status").addClass("loading");
+            $.getJSON("status", function(data) {
+                $(".error").addClass("hidden");
+                $(".isOnline").addClass("hidden");
+                $(".numPlayersOnline").addClass("hidden");
+                $(".serverStarter").addClass("hidden");
+                if (data.ErrorText != "") {
+                    $(".error").text(data.ErrorText);
+                    $(".error").removeClass("hidden");
+                } else if (data.IsOnline) {
+                    $(".isOnline").text("Server is online.");
+                    $(".numPlayersOnline").text(`${data.NumPlayersOnline} players online right now.`);
+                    $(".isOnline").removeClass("hidden");
+                    $(".numPlayersOnline").removeClass("hidden");
+                } else {
+                    $(".isOnline").text("Server is offline.");
+                    $(".isOnline").removeClass("hidden");
+                    $(".serverStarter").removeClass("hidden");
+                }
+                $(".playersOnline").empty();
+                $.each(data.PlayersOnline, function(index, value) {
+                    $(".playersOnline").append(`<li>${value}</li>`);
                 });
-            }, 1000);
+                // Change the p under status to "Loaded!"
+                $(".loadStatus").text("Loaded!");
+                $(".reloader").removeClass("hidden");
+                $("#status").removeClass("loading");
+            });
         }
         $(document).ready(function() {
             refresh();
@@ -48,15 +54,17 @@
     <div id="main" style="display:flex; justify-content:center; align-items:center;">
         <div id="content" style="border:1px solid grey; max-height: 500px; max-width: 800px; padding: 10px;">
             <h2>Minecraft Server Status</h2>
-            <div id="status" class="" style="border-top: 60px;">
+            <p class="loadStatus">Loading...</p>
+            <div id="status" class="loading" style="border-top: 60px;">
                 <h3>minecraft.adam0.net</h3>
-                <p class="loadStatus">Loading...</p>
                 <p class="error" style="color: red;" class="hidden"></p>
                 <p class="isOnline" class="hidden"></p>
-                <p class="playersOnline" class="hidden"></p>
-                <button class="serverStarter hidden">Start Server</button>
-                <button class="reloader hidden">Reload</button>
+                <p class="numPlayersOnline" class="hidden"></p>
+                <ul class="playersOnline">
+                </ul>
             </div>
+            <p><button class="serverStarter hidden">Start Server</button></p>
+            <p><button class="reloader hidden">Reload</button></p>
         </div>
     </div>
 </body>

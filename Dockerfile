@@ -28,7 +28,7 @@ RUN go build -v -o Batchcraft
 FROM gcr.io/distroless/base-debian10:debug
 
 COPY --from=build /src/app/ /app/
-COPY --from=build /src/Batchcraft/Batchcraft /app/Batchcraft
+COPY --from=build /src/Batchcraft/Batchcraft /bin/Batchcraft
 
 WORKDIR /app
 
