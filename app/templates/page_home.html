@@ -10,6 +10,24 @@
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script type="text/javascript">
+        function retryServer(maxTries, iter = 0) {
+            $.getJSON("status", function(data) {
+                // If data contains error text, retry
+                if (iter == maxTries) {
+                    $(".loadStatus").text("Failed to start server.");
+                    refresh();
+                } else if (data.ErrorText != "") {
+                    $(".loadStatus").append(".");
+                    setTimeout(function() {
+                        retryServer(maxTries, iter+1);
+                    }, 1000);
+                } else {
+                    $(".loadStatus").text("Started server!");
+                    $("button").attr("disabled", false);
+                    refresh();
+                }
+            });
+        }
         function refresh() {
             $(".reloader").addClass("hidden");
             $("#status").addClass("loading");
@@ -21,6 +39,7 @@
                 if (data.ErrorText != "") {
                     $(".error").text(data.ErrorText);
                     $(".error").removeClass("hidden");
+                    $(".serverStarter").removeClass("hidden");
                 } else if (data.IsOnline) {
                     $(".isOnline").text("Server is online.");
                     $(".numPlayersOnline").text(`${data.NumPlayersOnline} players online right now.`);
@@ -46,6 +65,13 @@
             $(".reloader").click(function() {
                 $(".loadStatus").text("Loading...");
                 refresh();
+            });
+            $(".serverStarter").click(function() {
+                $(".loadStatus").text("Starting server (may take up to 30s)");
+                $("button").attr("disabled", true);
+                $.getJSON("start", function(data) {
+                    retryServer(30);
+                });
             });
         });
     </script>

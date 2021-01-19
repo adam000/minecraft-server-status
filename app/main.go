@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/adam000/goutils/page"
 	"github.com/adam000/goutils/shell"
@@ -31,6 +33,7 @@ func addHandlers() {
 
 	r.HandleFunc("/", mainHandler)
 	r.HandleFunc("/status", statusHandler)
+	r.HandleFunc("/start", startHandler)
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -44,8 +47,10 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type config struct {
-	AddressAndPort string
-	Password       string
+	ServerAddress string
+	RconPort      string
+	KnockerPort   string
+	Password      string
 }
 
 type status struct {
@@ -73,9 +78,9 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	parser := json.NewDecoder(configFile)
-	parser.Decode(cfg)
+	parser.Decode(&cfg)
 
-	stdout, stderr, err := shell.RunInDir(".", "/bin/Batchcraft", "-a", cfg.AddressAndPort, "-p", cfg.Password, "-c", "list")
+	stdout, stderr, err := shell.RunInDir(".", "/bin/Batchcraft", "-a", fmt.Sprintf("%s:%s", cfg.ServerAddress, cfg.RconPort), "-p", cfg.Password, "-c", "list")
 
 	if err != nil {
 		log.Printf("Error running batchcraft: %s (%s)", err, stderr)
@@ -133,4 +138,32 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 		NumPlayersOnline: numPlayers,
 		PlayersOnline:    players,
 	})
+}
+
+func startHandler(w http.ResponseWriter, r *http.Request) {
+	var cfg config
+	configFile, err := os.Open("config.json")
+	if err != nil {
+		json.NewEncoder(w).Encode(status{
+			ErrorText: fmt.Sprintf("Error loading config file: %s", err),
+		})
+		return
+	}
+
+	parser := json.NewDecoder(configFile)
+	parser.Decode(&cfg)
+
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", cfg.ServerAddress, cfg.KnockerPort), 5*time.Second)
+	if err != nil {
+		json.NewEncoder(w).Encode(status{
+			ErrorText: fmt.Sprintf("Error knocking on server: %s", err),
+		})
+		return
+	}
+	conn.Close()
+
+	json.NewEncoder(w).Encode(struct{ result string }{
+		"ok",
+	})
+	return
 }
