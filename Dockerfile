@@ -2,7 +2,7 @@
 # Base Go build
 ####
 
-FROM golang:1.15.6 as build
+FROM golang:1.15.8 as build
 ENV GO111MODULE on
 
 # Warm up the module cache.

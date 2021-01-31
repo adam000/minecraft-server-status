@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adam000/goutils/healthcheck"
 	"github.com/adam000/goutils/page"
 	"github.com/adam000/goutils/shell"
 	"github.com/gorilla/mux"
@@ -34,6 +36,8 @@ func addHandlers() {
 	r.HandleFunc("/", mainHandler)
 	r.HandleFunc("/status", statusHandler)
 	r.HandleFunc("/start", startHandler)
+	r.HandleFunc("/health", healthcheck.PingHealthcheckHandler)
+	r.HandleFunc("/host-healthcheck", hostHealthcheckHandler)
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -106,7 +110,7 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// The first line of output says "There are x out of a maximum y players online.\n<list of players>". Get the number out and return that
+	// The first line of output says "There are x out of a maximum y players online.\n<list of players>" (with some strange characters for formatting). Get the number out and return that
 	re := regexp.MustCompile("(§.)")
 	stdout = re.ReplaceAllString(stdout, "")
 
@@ -128,9 +132,10 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	players := make([]string, len(lines)-2)
-	for i, player := range lines[1 : len(lines)-1] {
-		players[i] = strings.SplitAfter(player, " ")[1]
+	players := make([]string, numPlayers)
+	playerLine := strings.SplitAfter(lines[1], ":")[1]
+	for i, player := range strings.SplitAfter(playerLine, ",") {
+		players[i] = strings.Trim(player, ", ")
 	}
 
 	json.NewEncoder(w).Encode(status{
@@ -165,5 +170,29 @@ func startHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(struct{ result string }{
 		"ok",
 	})
-	return
+}
+
+func hostHealthcheckHandler(w http.ResponseWriter, r *http.Request) {
+	endpoint := "http://192.168.86.4:8080/health"
+	resp, err := http.Get(endpoint)
+	if err != nil {
+		json.NewEncoder(w).Encode(struct {
+			Status string
+		}{
+			fmt.Sprintf("%#v", err),
+		})
+		return
+	}
+
+	defer resp.Body.Close()
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		json.NewEncoder(w).Encode(struct {
+			Status string
+		}{
+			fmt.Sprintf("%#v", err),
+		})
+		return
+	}
+	fmt.Fprint(w, string(content))
 }

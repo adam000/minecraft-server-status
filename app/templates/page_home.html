@@ -15,15 +15,17 @@
                 // If data contains error text, retry
                 if (iter == maxTries) {
                     $(".loadStatus").text("Failed to start server.");
-                    refresh();
+                    $("button").attr("disabled", false);
+                    $(".retryCounter").text("");
                 } else if (data.ErrorText != "") {
-                    $(".loadStatus").append(".");
+                    $(".retryCounter").text(`(${iter} attempt(s) to reach the server)`);
                     setTimeout(function() {
                         retryServer(maxTries, iter+1);
                     }, 1000);
                 } else {
                     $(".loadStatus").text("Started server!");
                     $("button").attr("disabled", false);
+                    $(".retryCounter").text("");
                     refresh();
                 }
             });
@@ -41,16 +43,17 @@
                     $(".error").removeClass("hidden");
                     $(".serverStarter").removeClass("hidden");
                 } else if (data.IsOnline) {
-                    $(".isOnline").text("Server is online.");
-                    $(".numPlayersOnline").text(`${data.NumPlayersOnline} players online right now.`);
+                    $(".isOnline").text("Minecraft server is online.");
+                    $(".numPlayersOnline").text(`${data.NumPlayersOnline} player(s) online right now.`);
                     $(".isOnline").removeClass("hidden");
                     $(".numPlayersOnline").removeClass("hidden");
                 } else {
-                    $(".isOnline").text("Server is offline.");
+                    $(".isOnline").text("Minecraft server is offline.");
                     $(".isOnline").removeClass("hidden");
                     $(".serverStarter").removeClass("hidden");
                 }
                 $(".playersOnline").empty();
+                console.log(data.PlayersOnline);
                 $.each(data.PlayersOnline, function(index, value) {
                     $(".playersOnline").append(`<li>${value}</li>`);
                 });
@@ -60,6 +63,16 @@
                 $("#status").removeClass("loading");
             });
         }
+        function checkHost() {
+            $.getJSON("host-healthcheck", function(data) {
+                if (data.IsAlive) {
+                    $(".hostStatus").text("Minecraft host is online.");
+                } else {
+                    console.log(data);
+                    $(".hostStatus").text("Could not contact Minecraft host; attempts to start the server probably won't work. Retrying in 5 seconds...");
+                }
+            });
+        }
         $(document).ready(function() {
             refresh();
             $(".reloader").click(function() {
@@ -67,12 +80,15 @@
                 refresh();
             });
             $(".serverStarter").click(function() {
-                $(".loadStatus").text("Starting server (may take up to 30s)");
+                var timeToLoad = 2;
+                $(".loadStatus").text(`Starting server (may take around ${timeToLoad}s)`);
                 $("button").attr("disabled", true);
                 $.getJSON("start", function(data) {
-                    retryServer(30);
+                    retryServer(timeToLoad * 2);
                 });
             });
+            checkHost();
+            window.setInterval(checkHost, 5000);
         });
     </script>
 </head>
@@ -80,17 +96,19 @@
     <div id="main" style="display:flex; justify-content:center; align-items:center;">
         <div id="content" style="border:1px solid grey; max-height: 500px; max-width: 800px; padding: 10px;">
             <h2>Minecraft Server Status</h2>
-            <p class="loadStatus">Loading...</p>
-            <div id="status" class="loading" style="border-top: 60px;">
+            <div id="status" class="loading" style="border-top: 2px grey solid; margin-top 60px;">
                 <h3>minecraft.adam0.net</h3>
+                <p class="loadStatus">Loading...</p>
+                <p class="retryCounter"/>
                 <p class="error" style="color: red;" class="hidden"></p>
+                <p><button class="serverStarter hidden">Start Server</button></p>
+                <p><button class="reloader hidden">Refresh Status</button></p>
+                <p class="hostStatus"/>
                 <p class="isOnline" class="hidden"></p>
                 <p class="numPlayersOnline" class="hidden"></p>
                 <ul class="playersOnline">
                 </ul>
             </div>
-            <p><button class="serverStarter hidden">Start Server</button></p>
-            <p><button class="reloader hidden">Reload</button></p>
         </div>
     </div>
 </body>
