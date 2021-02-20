@@ -80,7 +80,7 @@
                 refresh();
             });
             $(".serverStarter").click(function() {
-                var timeToLoad = 2;
+                var timeToLoad = 30;
                 $(".loadStatus").text(`Starting server (may take around ${timeToLoad}s)`);
                 $("button").attr("disabled", true);
                 $.getJSON("start", function(data) {
