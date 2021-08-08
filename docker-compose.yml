@@ -3,7 +3,7 @@ version: "3"
 services:
     web:
         #build: .
-        image: localhost:5000/minecraft-server-status:latest
+        image: localhost:2005/minecraft-server-status:latest
         ports:
             - "2001:8080"
         restart: "unless-stopped"
