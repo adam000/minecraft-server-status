@@ -1,0 +1,6 @@
+app/app
+healthchecker/healthchecker
+docker-compose.yml
+Dockerfile
+docker/*
+sample-config.json
